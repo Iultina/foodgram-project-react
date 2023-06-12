@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Follow
 
+from .models import Follow
 
 User = get_user_model()
 
@@ -26,12 +26,9 @@ class SetPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True, write_only=True)
 
 
-class SubscriptionSerializer(serializers.ModelSerializer): 
-    author = UserSerializer(read_only=True)     
+class SubscriptionSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
 
-    class Meta: 
-        model = Follow         
+    class Meta:
+        model = Follow
         fields = ('author',)
-        
-
-#почитать про метод def to_representation и instance. to_representation(self, instance):

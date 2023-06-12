@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -6,12 +7,12 @@ from rest_framework.permissions import (IsAdminUser, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
-from .serializers import SetPasswordSerializer, UserSerializer, SubscriptionSerializer
-from .models import Follow, User
-from django.shortcuts import get_object_or_404
-
+from .models import Follow
+from .serializers import (SetPasswordSerializer, SubscriptionSerializer,
+                          UserSerializer)
 
 User = get_user_model()
+
 
 class UserViewSet(viewsets.ModelViewSet):
     '''
@@ -40,7 +41,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user = request.user
         serializer = self.get_serializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     @action(
         methods=['post'],
         detail=False,
@@ -55,11 +56,14 @@ class UserViewSet(viewsets.ModelViewSet):
         old_password = serializer.validated_data.get('current_password')
         new_password = serializer.validated_data.get('new_password')
         if not user.check_password(old_password):
-            return Response('Неверный пароль', status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                'Неверный пароль',
+                status=status.HTTP_400_BAD_REQUEST
+            )
         user.set_password(new_password)
         user.save()
         return Response('Пароль успешно изменен', status=status.HTTP_200_OK)
-    
+
     @action(
         methods=['get'],
         detail=False,
@@ -67,19 +71,19 @@ class UserViewSet(viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,),
     )
     def subscriptions(self, request):
-        '''Список подписок пользователя.''' 
+        '''Список подписок пользователя.'''
         user = self.request.user
         subscriptions = user.follower.all()
         serializer = SubscriptionSerializer(subscriptions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
-        methods=['post', 'delete'], 
-        detail=True, 
-        serializer_class=SubscriptionSerializer, 
-        permission_classes=(IsAuthenticated,), 
-    ) 
-    def subscribe(self, request, pk=None): 
+        methods=['post', 'delete'],
+        detail=True,
+        serializer_class=SubscriptionSerializer,
+        permission_classes=(IsAuthenticated,),
+    )
+    def subscribe(self, request, pk=None):
         '''Добавление и удаление подписок пользователя.'''
         user = request.user
         target_user = get_object_or_404(User, pk=pk)
@@ -103,7 +107,13 @@ class UserViewSet(viewsets.ModelViewSet):
         elif request.method == 'DELETE':
             if user.following.filter(pk=target_user.pk).exists():
                 Follow.objects.filter(user=user, author=target_user).delete()
-                return Response({'status': 'Вы успешно отписались от пользователя'}, status=status.HTTP_200_OK)
+                return Response(
+                    {'status': 'Вы успешно отписались от пользователя'},
+                    status=status.HTTP_200_OK
+                )
             else:
-                return Response({'error': 'Вы не подписаны на этого пользователя'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'error': 'Вы не подписаны на этого пользователя'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 # разобраться с user=user, author=target_user
