@@ -10,7 +10,7 @@ from rest_framework.permissions import (IsAdminUser, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
-from recipes.models import FavoritesList, Ingredient, Recipe, Tag, ShoppingList
+from recipes.models import FavoritesList, Ingredient, Recipe, Tag, ShoppingList, RecipeIngredient
 
 from .filters import IngredientFilter, RecipeFilter
 from .serializers import (FavoritesListSerializer, IngredientSerializer,
@@ -120,6 +120,28 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
         return Response(serializer.data)
 
+
+
+    # @action(
+    #     detail=False,
+    #     methods=['get'],
+    #     permission_classes=[IsAuthenticated, ]
+    # )
+    # def download_shopping_cart(self, request):
+    #     ingredients = (
+    #                     RecipeIngredient.objects
+    #                     .filter(recipe__lists__user=request.user)
+    #                     .values('ingredient')
+    #                     .annotate(quantity=Sum('quantity'))
+    #                     .values_list('ingredient__name',
+    #                                  'ingredient__measurements_unit',
+    #                                  'quantity')
+    #     )
+    #     response = HttpResponse(ingredients, content_type="text/plain")
+    #     response['Content-Disposition'] = (
+    #         'attachment; filename=shopping-list.txt'
+    #     )
+    #     return response
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     '''Получение списка ингридиентов.'''

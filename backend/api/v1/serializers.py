@@ -5,7 +5,7 @@ from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import exceptions, serializers
 
-from recipes.models import (CustomRecipeIngredient, FavoritesList, Ingredient,
+from recipes.models import (RecipeIngredient, FavoritesList, Ingredient,
                             Recipe, ShoppingList, Tag)
 from users.serializers import UserSerializer
 
@@ -34,13 +34,22 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag()
         fields = ('id', 'name', 'color', 'slug')
 
+class RecipeIngredientSerializer(serializers.ModelSerializer):
+    ingredient = serializers.StringRelatedField()
+    measurement_unit = serializers.StringRelatedField()
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'ingredient', 'measurement_unit')
+
 
 class RecipeSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField()
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True
     )
-
+    ingredients = RecipeIngredientSerializer(many=True)
+    
     class Meta:
         model = Recipe
         fields = (
@@ -49,8 +58,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             'text',
             'image',
             'ingredients',
-            'amount',
-            'measurement_unit',
             'tags',
             'cooking_time',
             'pub_date',
@@ -65,6 +72,23 @@ class RecipeSerializer(serializers.ModelSerializer):
             if user.is_authenticated:
                 return obj.favorites.filter(user=user).exists()
         return False
+    
+    def get_ingredients(self, obj):
+        recipe_ingredients = RecipeIngredient.objects.filter(recipe=obj)
+        return RecipeIngredientSerializer(recipe_ingredients, many=True).data
+    
+    def create(self, validated_data):
+        ingredients_data = validated_data.pop('ingredients')
+        recipe = Recipe.objects.create(**validated_data)
+        for ingredient_data in ingredients_data:
+            ingredient = Ingredient.objects.get(id=ingredient_data['ingredient']['id'])
+            RecipeIngredient.objects.create(
+                recipe=recipe,
+                ingredient=ingredient,
+                amount=ingredient_data['amount'],
+                measurement_unit=ingredient_data['measurement_unit']
+            )
+        return recipe
 
 
 class FavoritesListSerializer(serializers.Serializer):
@@ -100,19 +124,10 @@ class ShoppingDownloadSerializer(serializers.ModelSerializer):
         fields = ('ingredient', 'amount', 'measurement_unit')
 
     def get_ingredient(self, obj):
-        if obj.recipe:
-            return obj.recipe.ingredients.name
-        else:
-            return obj.ingredient.name
-
+        return obj.recipe.ingredients.name
+ 
     def get_amount(self, obj):
-        if obj.recipe:
-            return obj.recipe.amount
-        else:
-            return obj.amount
+        return obj.recipe.amount
 
     def get_measurement_unit(self, obj):
-        if obj.recipe:
-            return obj.recipe.measurement_unit
-        else:
-            return obj.measurement_unit
+        return obj.recipe.measurement_unit

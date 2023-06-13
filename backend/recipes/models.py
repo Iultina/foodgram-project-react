@@ -10,6 +10,17 @@ class Ingredient(models.Model):
         max_length=255,
         blank=False
     )
+    amount = models.PositiveSmallIntegerField(
+        blank=True,
+        null = True,
+        verbose_name='Количество',
+    )
+    measurement_unit = models.CharField(
+        max_length=100,
+        blank=True,
+        null = True,
+        verbose_name='Единица измерения'
+    )
 
     class Meta:
         ordering = ('name',)
@@ -67,24 +78,14 @@ class Recipe(models.Model):
     image = models.ImageField(
         'Изображение',
         upload_to='recipes/',
-        blank=False
+        blank=True,
+        null=True
     )
     ingredients = models.ManyToManyField(
         Ingredient,
         blank=False,
         related_name='recipes',
         verbose_name='ингредиенты',
-    )
-    amount = models.PositiveSmallIntegerField(
-        blank=True,
-        null=True,
-        verbose_name='Количество',
-    )
-    measurement_unit = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name='Единица измерения'
     )
     tags = models.ManyToManyField(
         Tag,
@@ -104,36 +105,20 @@ class Recipe(models.Model):
         return self.name
 
 
-class CustomRecipeIngredient(models.Model):
+class RecipeIngredient(models.Model):
     '''Модель для добавления ингредиентов в рецепте.'''
-    recipe = models.ForeignKey(
+    recipe = models.ManyToManyField(
         Recipe,
-        on_delete=models.CASCADE,
         related_name='recipe_ingredient',
         verbose_name='Рецепт',
     )
-    ingredient = models.ForeignKey(
+    ingredient = models.ManyToManyField(
         Ingredient,
-        on_delete=models.CASCADE,
-        related_name='ingredient',
+        related_name='ingredient_in_recipe',
         verbose_name='Ингредиент',
-    )
-    amount = models.PositiveSmallIntegerField(
-        blank=False,
-        verbose_name='Количество',
-    )
-    measurement_unit = models.CharField(
-        max_length=100,
-        blank=False,
-        verbose_name='Единица измерения'
     )
 
     class Meta:
-        constraints = (
-            models.UniqueConstraint(
-                fields=('recipe', 'ingredient',),
-                name='recipe_ingredient_exists'),
-        )
         verbose_name = 'Ингредиент в рецепте',
         verbose_name_plural = 'Ингредиенты в рецепте'
 
