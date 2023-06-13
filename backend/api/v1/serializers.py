@@ -114,20 +114,20 @@ class ShoppingDownloadSerializer(serializers.ModelSerializer):
         fields = ('ingredient', 'amount', 'measurement_unit')
 
 
-class ShoppingDownloadSerializer(serializers.ModelSerializer):
-    ingredient = serializers.SerializerMethodField()
-    amount = serializers.SerializerMethodField()
-    measurement_unit = serializers.SerializerMethodField()
+# class ShoppingDownloadSerializer(serializers.ModelSerializer):
+#     ingredient = serializers.SerializerMethodField()
+#     amount = serializers.SerializerMethodField()
+#     measurement_unit = serializers.SerializerMethodField()
 
-    class Meta:
-        model = ShoppingList
-        fields = ('ingredient', 'amount', 'measurement_unit')
+#     class Meta:
+#         model = ShoppingList
+#         fields = ('ingredient', 'amount', 'measurement_unit')
 
-    def get_ingredient(self, obj):
-        return obj.recipe.ingredients.name
+#     def get_ingredient(self, obj):
+#         return obj.recipe.ingredients.name
  
-    def get_amount(self, obj):
-        return obj.recipe.amount
+#     def get_amount(self, obj):
+#         return obj.recipe.amount
 
-    def get_measurement_unit(self, obj):
-        return obj.recipe.measurement_unit
+#     def get_measurement_unit(self, obj):
+#         return obj.recipe.measurement_unit
