@@ -6,7 +6,7 @@ from .models import Follow
 User = get_user_model()
 
 
-class UserSerializer(serializers.ModelSerializer):
+class CustomUserSerializer(serializers.ModelSerializer):
     '''Сериализатор для работы с пользователями.'''
 
     class Meta:
@@ -27,7 +27,7 @@ class SetPasswordSerializer(serializers.Serializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    author = UserSerializer(read_only=True)
+    author = CustomUserSerializer(read_only=True)
 
     class Meta:
         model = Follow

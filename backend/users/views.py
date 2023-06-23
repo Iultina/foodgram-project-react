@@ -9,18 +9,17 @@ from rest_framework.response import Response
 
 from .models import Follow
 from .serializers import (SetPasswordSerializer, SubscriptionSerializer,
-                          UserSerializer)
-
+                          CustomUserSerializer)
 User = get_user_model()
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class CustomUserViewSet(viewsets.ModelViewSet):
     '''
     Просмотр списка пользователей.
     Регистрация пользователей.
     '''
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = CustomUserSerializer
     permission_classes = (IsAdminUser,)
 
     http_method_names = [
@@ -116,4 +115,3 @@ class UserViewSet(viewsets.ModelViewSet):
                     {'error': 'Вы не подписаны на этого пользователя'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-# разобраться с user=user, author=target_user

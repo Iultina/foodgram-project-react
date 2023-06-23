@@ -7,7 +7,7 @@ from rest_framework import exceptions, serializers
 
 from recipes.models import (RecipeIngredient, FavoritesList, Ingredient,
                             Recipe, ShoppingList, Tag)
-from users.serializers import UserSerializer
+from users.serializers import CustomUserSerializer
 
 User = get_user_model
 
@@ -25,7 +25,7 @@ class IngredientSerializer(serializers.ModelSerializer):
     '''Серилизатор для работы с ингридиентами.'''
     class Meta:
         model = Ingredient()
-        fields = ('id', 'name',)
+        fields = ('id', 'name', 'measurement_unit')
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -35,12 +35,11 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'color', 'slug')
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    ingredient = serializers.StringRelatedField()
-    measurement_unit = serializers.StringRelatedField()
+    ingredient = IngredientSerializer()
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'ingredient', 'measurement_unit')
+        fields = ('ingredient', 'amount')
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -73,25 +72,23 @@ class RecipeSerializer(serializers.ModelSerializer):
                 return obj.favorites.filter(user=user).exists()
         return False
     
-    def get_ingredients(self, obj):
-        recipe_ingredients = RecipeIngredient.objects.filter(recipe=obj)
-        return RecipeIngredientSerializer(recipe_ingredients, many=True).data
-    
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
         for ingredient_data in ingredients_data:
-            ingredient = Ingredient.objects.get(id=ingredient_data['ingredient']['id'])
-            RecipeIngredient.objects.create(
+            ingredient = ingredient_data.pop('ingredient')
+            amount = ingredient_data.pop('amount')
+            recipe_ingredient = RecipeIngredient.objects.create(
                 recipe=recipe,
                 ingredient=ingredient,
-                amount=ingredient_data['amount'],
-                measurement_unit=ingredient_data['measurement_unit']
+                amount=amount
             )
+            recipe_ingredient.save()
         return recipe
 
 
 class FavoritesListSerializer(serializers.Serializer):
+
     class Meta:
         model = FavoritesList
         fields = []
@@ -105,29 +102,4 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
 
 
 class ShoppingDownloadSerializer(serializers.ModelSerializer):
-    ingredient = serializers.SerializerMethodField()
-    amount = serializers.SerializerMethodField()
-    measurement_unit = serializers.SerializerMethodField()
-
-    class Meta:
-        model = ShoppingList
-        fields = ('ingredient', 'amount', 'measurement_unit')
-
-
-# class ShoppingDownloadSerializer(serializers.ModelSerializer):
-#     ingredient = serializers.SerializerMethodField()
-#     amount = serializers.SerializerMethodField()
-#     measurement_unit = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = ShoppingList
-#         fields = ('ingredient', 'amount', 'measurement_unit')
-
-#     def get_ingredient(self, obj):
-#         return obj.recipe.ingredients.name
- 
-#     def get_amount(self, obj):
-#         return obj.recipe.amount
-
-#     def get_measurement_unit(self, obj):
-#         return obj.recipe.measurement_unit
+    pass

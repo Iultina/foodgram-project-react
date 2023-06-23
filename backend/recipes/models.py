@@ -6,19 +6,13 @@ User = get_user_model()
 
 class Ingredient(models.Model):
     name = models.CharField(
-        'название ингредиента',
+        'Название ингредиента',
         max_length=255,
         blank=False
     )
-    amount = models.PositiveSmallIntegerField(
-        blank=True,
-        null = True,
-        verbose_name='Количество',
-    )
     measurement_unit = models.CharField(
         max_length=100,
-        blank=True,
-        null = True,
+        blank=False,
         verbose_name='Единица измерения'
     )
 
@@ -33,13 +27,13 @@ class Ingredient(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(
-        'название тэга',
+        'Название тэга',
         max_length=54,
         blank=False,
         unique=True
     )
     color = models.CharField(
-        'цвет',
+        'Цвет',
         max_length=7,
         blank=False,
         default='#ffffff'
@@ -67,12 +61,12 @@ class Recipe(models.Model):
         verbose_name='Автор рецепта'
     )
     name = models.CharField(
-        'название рецепта',
+        'Название рецепта',
         max_length=200,
         blank=False
     )
     text = models.TextField(
-        'описание рецепта',
+        'Описание рецепта',
         blank=False
     )
     image = models.ImageField(
@@ -93,7 +87,7 @@ class Recipe(models.Model):
         related_name='recipes',
         verbose_name='тэги',
     )
-    cooking_time = models.DurationField(blank=False)
+    cooking_time = models.PositiveSmallIntegerField(blank=False)
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -109,13 +103,17 @@ class RecipeIngredient(models.Model):
     '''Модель для добавления ингредиентов в рецепте.'''
     recipe = models.ManyToManyField(
         Recipe,
-        related_name='recipe_ingredient',
-        verbose_name='Рецепт',
+        related_name='recipe_ingredients',
+        verbose_name='Рецепт'
     )
     ingredient = models.ManyToManyField(
         Ingredient,
-        related_name='ingredient_in_recipe',
+        related_name='ingredient_recipes',
         verbose_name='Ингредиент',
+    )
+    amount = models.PositiveSmallIntegerField(
+        blank=False,
+        verbose_name='Количество',
     )
 
     class Meta:
