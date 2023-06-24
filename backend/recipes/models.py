@@ -101,13 +101,15 @@ class Recipe(models.Model):
 
 class RecipeIngredient(models.Model):
     '''Модель для добавления ингредиентов в рецепте.'''
-    recipe = models.ManyToManyField(
+    recipe = models.ForeignKey(
         Recipe,
+        on_delete = models.CASCADE,
         related_name='recipe_ingredients',
         verbose_name='Рецепт'
     )
-    ingredient = models.ManyToManyField(
+    ingredient = models.ForeignKey(
         Ingredient,
+        on_delete = models.CASCADE,
         related_name='ingredient_recipes',
         verbose_name='Ингредиент',
     )
