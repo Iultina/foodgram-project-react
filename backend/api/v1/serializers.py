@@ -7,42 +7,8 @@ from rest_framework import exceptions, serializers
 
 from recipes.models import (RecipeIngredient, FavoritesList, Ingredient,
                             Recipe, ShoppingList, Tag)
-
+from users.serializers import CustomUserSerializer
 User = get_user_model
-
-
-class CustomUserSerializer(serializers.ModelSerializer):
-    '''Сериализатор для работы с пользователями.'''
-
-    class Meta:
-        model = User
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-        )
-
-
-class SetPasswordSerializer(serializers.Serializer):
-    '''Сериализатор для смены пароля.'''
-    current_password = serializers.CharField(required=True, write_only=True)
-    new_password = serializers.CharField(required=True, write_only=True)
-
-
-class SubscriptionSerializer(serializers.ModelSerializer):
-    recipes = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',)
-
-    def get_recipes(self, obj):
-        recipes = Recipe.objects.filter(author=obj)
-        serializer = RecipeGetSerializer(recipes, many=True)
-        return serializer.data
-
 
 
 class Base64ImageField(serializers.ImageField):
@@ -66,7 +32,6 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag()
         fields = ('id', 'name', 'color', 'slug')
-
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(write_only=True)
@@ -93,6 +58,7 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
+    
     class Meta:
         model = Recipe
         fields = (
@@ -156,7 +122,8 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data): 
         ingredients_data = validated_data.pop('ingredients', None) 
-        tags_data = validated_data.pop('tags', None)
+        tags_data = validated_data.pop('tags', None) 
+ 
         if ingredients_data: 
             recipe_ingredients = RecipeIngredient.objects.filter(recipe=instance) 
             recipe_ingredients_ids = [recipe_ingredient.id for recipe_ingredient in recipe_ingredients] 
@@ -184,3 +151,36 @@ class FavoritesListSerializer(serializers.Serializer):
     class Meta:
         model = FavoritesList
         fields = []
+
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    '''Сериализатор для работы с пользователями.'''
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+        )
+
+
+class SetPasswordSerializer(serializers.Serializer):
+    '''Сериализатор для смены пароля.'''
+    current_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True)
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    recipes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',)
+
+    def get_recipes(self, obj):
+        recipes = Recipe.objects.filter(author=obj)
+        serializer = RecipeGetSerializer(recipes, many=True)
+        return serializer.data
