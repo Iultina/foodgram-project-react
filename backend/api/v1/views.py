@@ -17,20 +17,24 @@ from .serializers import (FavoritesListSerializer, IngredientSerializer,
                           RecipeGetSerializer, RecipeCreateSerializer,
                           TagSerializer, CustomUserSerializer,
                           SetPasswordSerializer, SubscriptionSerializer,
-                          SubscribeSerializer, ShortRecipeSerializer
+                          SubscribeSerializer, ShoppingCartSerializer,
+                          
                           )
 from django.db.models import Sum
 from users.models import Follow
 from django.db import IntegrityError
 from .mixins import CreateDeleteViewSet
 
+from django.http import HttpResponse
+
+
 User = get_user_model()
 
 class CustomUserViewSet(viewsets.ModelViewSet):
-    '''
-    Просмотр списка пользователей.
+    '''Просмотр списка пользователей.
     Регистрация пользователей.
     '''
+
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = (IsAdminUser,)
@@ -85,6 +89,8 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,),
     )
     def subscriptions(self, request):
+        '''Просмотр подписок пользователя.'''
+
         user = request.user
         subscriptions = user.follower.all()
         users_id = [subscription_instance.author.id for subscription_instance in subscriptions]
@@ -134,10 +140,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
+        '''Определение серилизатора.'''
+
         if self.action in ('list', 'retrieve'):
             return RecipeGetSerializer
         elif self.action == 'favorite': 
-            return FavoritesListSerializer 
+            return FavoritesListSerializer
+        elif self.action == 'shopping_cart':
+            return ShoppingCartSerializer
         return RecipeCreateSerializer
 
     def perform_create(self, serializer):
@@ -153,9 +163,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,),
     )
     def favorite(self, request, pk=None):
+        '''Добавление/удаление подписок пользователя.'''
+
         if request.method == 'POST': 
             serializer = self.get_serializer(data=request.data, context={'request': request})
-            print(f'Это пишу я: {request.data}')
             serializer.is_valid(raise_exception=True)
             response_data = serializer.save()
             return Response(
@@ -172,86 +183,68 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_204_NO_CONTENT
             )
 
-    # @action(
-    #     methods=['post', 'delete'],
-    #     detail=True,
-    #     serializer_class=ShoppingCartSerializer,
-    #     permission_classes=(IsAuthenticated,),
-    # )
-    # def shopping_cart(self, request, pk=None):
-    #     user = self.request.user
-    #     recipe = get_object_or_404(Recipe, pk=pk)
+    @action(
+        methods=['post', 'delete'],
+        detail=True,
+        serializer_class=ShoppingCartSerializer,
+        permission_classes=(IsAuthenticated,),
+    )
+    def shopping_cart(self, request, pk=None):
+        '''Добавление/удаление рецепта из корзины.'''
 
-    #     if self.request.method == 'POST':
-    #         if ShoppingList.objects.filter(
-    #             user=user,
-    #             recipe=recipe
-    #         ).exists():
-    #             raise ValidationError(
-    #                 'Вы уже добавили этот рецепт в список покупок'
-    #             )
-    #         ShoppingList.objects.create(user=user, recipe=recipe)
-    #         return Response(
-    #             {'Рецепт успешно добавлен в список покупок'},
-    #             status=status.HTTP_201_CREATED
-    #         )
-    #     if self.request.method == 'DELETE':
-    #         if not ShoppingList.objects.filter(
-    #             user=user,
-    #             recipe=recipe
-    #         ).exists():
-    #             raise ValidationError(
-    #                 'Вы не добавляли этот рецепт в список покупок'
-    #             )
-    #         shopping_cart = get_object_or_404(
-    #             ShoppingList,
-    #             user=user,
-    #             recipe=recipe
-    #         )
-    #         shopping_cart.delete()
-    #         return Response(
-    #             {'Рецепт удален из списка покупок'},
-    #             status=status.HTTP_204_NO_CONTENT
-    #         )
+        if self.request.method == 'POST':
+            serializer = self.get_serializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            response_data = serializer.save()
+            return Response(
+                {'message': 'Рецепт успешно добавлен в список покупок',
+                 'data': response_data},
+                 status=status.HTTP_201_CREATED
+            )
+        elif request.method == 'DELETE':
+            get_object_or_404(
+                ShoppingList, user=self.request.user,
+                recipe=get_object_or_404(Recipe, pk=pk)).delete()
+            return Response(
+                {'Рецепт успешно удален из списка покупок'},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        
+    @action(
+    detail=False,
+    methods=['get'],
+    permission_classes=[IsAuthenticated, ]
+    )
+    def download_shopping_cart(self, request):
+        '''Скачать список покупок.'''
 
-    # @action(
-    #     detail=False,
-    #     methods=('get',),
-    #     permission_classes=(IsAuthenticated,)
-    # )
-    # def shopping_cart_list(self, request):
-    #     user = self.request.user
-    #     shopping_list = ShoppingList.objects.filter(user=user)
-    #     serializer = ShoppingDownloadSerializer(
-    #         shopping_list, many=True, context={'request': request}
-    #     )
-    #     return Response(serializer.data)
+        shopping_cart = ShoppingList.objects.filter(user=self.request.user)
+        recipes = [item.recipe.id for item in shopping_cart]
+        buy_list = RecipeIngredient.objects.filter(
+            recipe__in=recipes
+        ).values(
+            'ingredient'
+        ).annotate(
+            amount=Sum('amount')
+        )
+        buy_list_text = 'Foodgram\nСписок покупок:\n'
+        for item in buy_list:
+            ingredient = Ingredient.objects.get(pk=item['ingredient'])
+            amount = item['amount']
+            buy_list_text += (
+                f'{ingredient.name}, {amount} '
+                f'{ingredient.measurement_unit}\n'
+            )
+        response = HttpResponse(buy_list_text, content_type="text/plain")
+        response['Content-Disposition'] = (
+            'attachment; filename=shopping-list.txt'
+        )
+        return response
 
-
-
-    # @action(
-    #     detail=False,
-    #     methods=['get'],
-    #     permission_classes=[IsAuthenticated, ]
-    # )
-    # def download_shopping_cart(self, request):
-    #     ingredients = (
-    #                     RecipeIngredient.objects
-    #                     .filter(recipe__lists__user=request.user)
-    #                     .values('ingredient')
-    #                     .annotate(quantity=Sum('quantity'))
-    #                     .values_list('ingredient__name',
-    #                                  'ingredient__measurements_unit',
-    #                                  'quantity')
-    #     )
-    #     response = HttpResponse(ingredients, content_type="text/plain")
-    #     response['Content-Disposition'] = (
-    #         'attachment; filename=shopping-list.txt'
-    #     )
-    #     return response
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     '''Получение списка ингридиентов.'''
+
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (IsAdminUser,)
@@ -261,6 +254,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     '''Получение списка тэгов.'''
+
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (IsAdminUser,)

@@ -178,4 +178,4 @@ class ShoppingList(models.Model):
         ]
 
     def __str__(self):
-        return f'Список покупок {self.user}'
+        return f'Рецепт из корзины покупок {self.user}'
