@@ -20,13 +20,6 @@ class User(AbstractUser):
         max_length=150,
         blank=False,
     )
-    # following = models.ManyToManyField(
-    #     'self',
-    #     through=Follow,
-    #     symmetrical=False,
-    #     related_name='followers',
-    #     verbose_name='ПОДПИСКИ',
-    # )
 
     class Meta:
         ordering = ('username',)
@@ -35,7 +28,6 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.get_full_name()
-
 
 
 class Follow(models.Model):
