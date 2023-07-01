@@ -1,28 +1,72 @@
 import base64
+import re
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
+from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import exceptions, serializers
 
-from recipes.models import (RecipeIngredient, FavoritesList, Ingredient,
-                            Recipe, ShoppingList, Tag)
+from recipes.models import (FavoritesList, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingList, Tag)
 from users.models import Follow, User
-from django.db import IntegrityError
 
+# class CustomUserSerializer(serializers.ModelSerializer):
+#     '''Сериализатор для работы с пользователями.'''
 
-class CustomUserSerializer(serializers.ModelSerializer):
-    '''Сериализатор для работы с пользователями.'''
+#     class Meta:
+#         model = User
+#         fields = (
+#             'username',
+#             'password',
+#             'first_name',
+#             'last_name',
+#             'email',
+#         )
+
+#     def validate_username(self, value):
+#         '''Проверяем, что username не содержит недопустимые символы.'''
+#         print('Аутентификация серилизатор')
+#         username = value
+#         if not re.match(r'^[\w.@+-]+$', username):
+#             ValidationError(
+#                 'Username содержит недопустимые символы'
+#             )
+#         return value
+
+class UserReadSerializer(UserSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+    print('Работает гет серилизатор')
 
     class Meta:
         model = User
-        fields = (
-            'username',
-            'password',
-            'first_name',
-            'last_name',
-            'email',
-        )
+        fields = ('email', 'id', 'username',
+                  'first_name', 'last_name', 'is_subscribed')
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request:
+            user = request.user
+            if user.is_authenticated:
+                return Follow.objects.filter(
+                    user=user, author=obj).exists()
+        return False
+
+
+class UserCreateSerializer(UserCreateSerializer):
+    password = serializers.CharField(
+        style={
+            'input_type': 'password'
+        },
+        write_only=True,
+    )
+    print('Работает криэйт серилизатор')
+
+    class Meta(UserCreateSerializer.Meta):
+        fields = ('email', 'username',
+                  'first_name', 'last_name', 'password')
 
 
 class SetPasswordSerializer(serializers.Serializer):
@@ -35,7 +79,7 @@ class SetPasswordSerializer(serializers.Serializer):
 class SubscriptionSerializer(serializers.ModelSerializer):
     '''Сериализатор для получения списка подписок пользователя.'''
 
-    author = CustomUserSerializer(read_only=True)
+    author = UserReadSerializer(read_only=True)
 
     class Meta:
         model = Follow
@@ -98,7 +142,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 class RecipeGetSerializer(serializers.ModelSerializer):
     '''Получение списка рецептов.'''
 
-    author = CustomUserSerializer(
+    author = UserReadSerializer(
         read_only=True,
         default=serializers.CurrentUserDefault()
     )

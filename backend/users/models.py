@@ -1,9 +1,20 @@
 from django.contrib.auth.models import AbstractUser
-from django.db.models import F, Q
+from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models import F, Q
 
 
 class User(AbstractUser):
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        # validators=[
+        #     RegexValidator(
+        #         r'^[\w.@+-]+$',
+        #         'Введите коректное имя пользователя',
+        #     ),
+        # ]
+    )
     first_name = models.CharField(
         max_length=150,
         blank=False,
@@ -20,6 +31,8 @@ class User(AbstractUser):
         max_length=150,
         blank=False,
     )
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ('username', 'first_name', 'last_name', 'password')
 
     class Meta:
         ordering = ('username',)
@@ -41,6 +54,9 @@ class Follow(models.Model):
         on_delete=models.CASCADE,
         related_name='following',
     )
+
+    def __str__(self):
+        return f'{self.user.username} - {self.author.username}'
 
     class Meta:
         verbose_name = 'Подписки'

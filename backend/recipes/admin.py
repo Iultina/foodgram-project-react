@@ -1,12 +1,24 @@
 from django.contrib import admin
+from django.contrib.admin import TabularInline
 
-from .models import FavoritesList, Ingredient, Recipe, ShoppingList, Tag
+from .models import (FavoritesList, Ingredient, Recipe, RecipeIngredient,
+                     ShoppingList, Tag)
+
+
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredient
+    extra = 1
 
 
 class RecipeAdmin(admin.ModelAdmin):
+    inlines = [RecipeIngredientInline]
     list_display = ('name', 'author', 'favorites_count')
     search_fields = ('name',)
     list_filter = ('name', 'author', 'tags')
+    exclude = ('ingredients',)
+
+    def favorites_count(self, obj):
+        return obj.favorites.count()
 
     def favorites_count(self, obj):
         return obj.favorites.count()

@@ -1,27 +1,14 @@
 from django.contrib.auth import get_user_model
 from django_filters import rest_framework as filters
 
-from recipes.models import Ingredient, Recipe
+from recipes.models import Recipe
 
 User = get_user_model()
 
 
-class IngredientFilter(filters.FilterSet):
-    name = filters.CharFilter(
-        field_name='name',
-        lookup_expr='istartswith',
-    )
-
-    class Meta:
-        model = Ingredient
-        fields = ('name',)
-
-
 class RecipeFilter(filters.FilterSet):
-    """
-    Фильтры для вывода рецептов по избранному,
-    автору, списку покупок и тегам.
-    """
+    '''Фильтрация по избранному, автору, списку покупок и тегам.'''
+    
     author = filters.ModelChoiceFilter(
         field_name='author',
         label='Автор',
@@ -60,5 +47,5 @@ class RecipeFilter(filters.FilterSet):
     def get_is_in_shopping_cart(self, queryset, name, value):
         if value:
             return Recipe.objects.filter(
-                shopping_lists__user=self.request.user
+                shopping_list__user=self.request.user
             )

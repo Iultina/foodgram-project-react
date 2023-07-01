@@ -1,52 +1,52 @@
 
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
+from django.db.models import Sum
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (IsAdminUser, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
-from recipes.models import FavoritesList, Ingredient, Recipe, Tag, ShoppingList, RecipeIngredient
-
-from .filters import IngredientFilter, RecipeFilter
-from .serializers import (FavoritesListSerializer, IngredientSerializer,
-                          RecipeGetSerializer, RecipeCreateSerializer,
-                          TagSerializer, CustomUserSerializer,
-                          SetPasswordSerializer, SubscriptionSerializer,
-                          SubscribeSerializer, ShoppingCartSerializer,
-                          
-                          )
-from django.db.models import Sum
+from recipes.models import (FavoritesList, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingList, Tag)
 from users.models import Follow
-from django.db import IntegrityError
-from .mixins import CreateDeleteViewSet
 
-from django.http import HttpResponse
-
+from .filters import RecipeFilter
+from .mixins import CreateListRetrieveViewSet
+from .serializers import (FavoritesListSerializer, IngredientSerializer,
+                          RecipeCreateSerializer, RecipeGetSerializer,
+                          SetPasswordSerializer, ShoppingCartSerializer,
+                          SubscribeSerializer, SubscriptionSerializer,
+                          TagSerializer, UserCreateSerializer,
+                          UserReadSerializer)
+from .utils import CustomPagination
 
 User = get_user_model()
 
-class CustomUserViewSet(viewsets.ModelViewSet):
-    '''Просмотр списка пользователей.
-    Регистрация пользователей.
-    '''
 
+class UserViewSet(CreateListRetrieveViewSet):
     queryset = User.objects.all()
-    serializer_class = CustomUserSerializer
-    permission_classes = (IsAdminUser,)
-
-    http_method_names = [
-        'get',
-        'post',
-    ]
+    print('Работает вью')
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('username',)
     filterset_fields = ('username',)
+    #permission_classes = (AllowAny,)
+    pagination_class = CustomPagination
 
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return UserReadSerializer
+        elif self.action == 'set_password': 
+            return SetPasswordSerializer
+        elif self.action == 'subscribe':
+            return SubscribeSerializer
+        return UserCreateSerializer
+    
     @action(
         methods=('get',),
         detail=False,
@@ -55,8 +55,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     def me(self, request):
         '''Информация о своем аккаунте.'''
 
-        user = request.user
-        serializer = self.get_serializer(user)
+        serializer = self.get_serializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
@@ -81,12 +80,13 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         user.set_password(new_password)
         user.save()
         return Response('Пароль успешно изменен', status=status.HTTP_200_OK)
-
+    
     @action(
         methods=('get',),
         detail=False,
         serializer_class=SubscriptionSerializer,
         permission_classes=(IsAuthenticated,),
+        pagination_class = CustomPagination,
     )
     def subscriptions(self, request):
         '''Просмотр подписок пользователя.'''
@@ -95,19 +95,17 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         subscriptions = user.follower.all()
         users_id = [subscription_instance.author.id for subscription_instance in subscriptions]
         users = User.objects.filter(id__in=users_id)
-        #paginated_queryset = self.paginate_queryset(users)
-        serializer = self.serializer_class(users, many=True)
-        # return self.get_paginated_response(serializer.data)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginated_queryset = self.paginate_queryset(users)
+        serializer = self.serializer_class(paginated_queryset, many=True)
+        return self.get_paginated_response(serializer.data)
 
-
-class SubscribeViewSet(CreateDeleteViewSet):
-    '''Добавление и удаление подписок пользователя.'''
-
-    serializer_class = SubscribeSerializer
-
-    @action(detail=True, methods=['post', 'delete'])
+    @action(detail=True,
+            methods=['post', 'delete'],
+            serializer_class = SubscribeSerializer,
+            permission_classes=(IsAuthenticated,))
     def subscribe(self, request, pk=None):
+        '''Добавление и удаление подписок пользователя.'''
+
         if request.method == 'POST':
             serializer = self.get_serializer(data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
@@ -129,7 +127,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     '''Работа с рецептами.'''
 
     queryset = Recipe.objects.all()
-    permission_classes = (IsAdminUser, IsAuthenticatedOrReadOnly)
+    #permission_classes = (IsAdminUser, IsAuthenticatedOrReadOnly)
     http_method_names = [
         'get',
         'post',
@@ -138,6 +136,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     ]
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
+    pagination_class = CustomPagination
 
     def get_serializer_class(self):
         '''Определение серилизатора.'''
