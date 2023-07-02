@@ -8,12 +8,6 @@ class User(AbstractUser):
     username = models.CharField(
         max_length=150,
         unique=True,
-        # validators=[
-        #     RegexValidator(
-        #         r'^[\w.@+-]+$',
-        #         'Введите коректное имя пользователя',
-        #     ),
-        # ]
     )
     first_name = models.CharField(
         max_length=150,

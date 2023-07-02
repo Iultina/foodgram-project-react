@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (IsAdminUser, IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+                                        IsAuthenticatedOrReadOnly, AllowAny)
 from rest_framework.response import Response
 
 from recipes.models import (FavoritesList, Ingredient, Recipe,
@@ -35,7 +35,7 @@ class UserViewSet(CreateListRetrieveViewSet):
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('username',)
     filterset_fields = ('username',)
-    #permission_classes = (AllowAny,)
+    permission_classes = (AllowAny,)
     pagination_class = CustomPagination
 
     def get_serializer_class(self):
@@ -109,7 +109,7 @@ class UserViewSet(CreateListRetrieveViewSet):
         if request.method == 'POST':
             serializer = self.get_serializer(data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
-            response_data = serializer.save()
+            response_data = serializer.save(id=pk)
             return Response(response_data)
         elif request.method == 'DELETE':
             subscription = get_object_or_404(
@@ -162,12 +162,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,),
     )
     def favorite(self, request, pk=None):
-        '''Добавление/удаление подписок пользователя.'''
+        '''Добавление/удаление рецептов из избранного.'''
 
         if request.method == 'POST': 
             serializer = self.get_serializer(data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
-            response_data = serializer.save()
+            response_data = serializer.save(id=pk)
             return Response(
                 {'message': 'Рецепт успешно добавлен в избранное.',
                  'data': response_data},
@@ -194,7 +194,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.request.method == 'POST':
             serializer = self.get_serializer(data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
-            response_data = serializer.save()
+            response_data = serializer.save(id=pk)
             return Response(
                 {'message': 'Рецепт успешно добавлен в список покупок',
                  'data': response_data},

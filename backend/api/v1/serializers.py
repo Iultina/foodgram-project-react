@@ -8,33 +8,12 @@ from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import exceptions, serializers
+from django.contrib.auth.hashers import make_password
 
 from recipes.models import (FavoritesList, Ingredient, Recipe,
                             RecipeIngredient, ShoppingList, Tag)
 from users.models import Follow, User
 
-# class CustomUserSerializer(serializers.ModelSerializer):
-#     '''Сериализатор для работы с пользователями.'''
-
-#     class Meta:
-#         model = User
-#         fields = (
-#             'username',
-#             'password',
-#             'first_name',
-#             'last_name',
-#             'email',
-#         )
-
-#     def validate_username(self, value):
-#         '''Проверяем, что username не содержит недопустимые символы.'''
-#         print('Аутентификация серилизатор')
-#         username = value
-#         if not re.match(r'^[\w.@+-]+$', username):
-#             ValidationError(
-#                 'Username содержит недопустимые символы'
-#             )
-#         return value
 
 class UserReadSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
@@ -56,17 +35,28 @@ class UserReadSerializer(UserSerializer):
 
 
 class UserCreateSerializer(UserCreateSerializer):
-    password = serializers.CharField(
-        style={
-            'input_type': 'password'
-        },
-        write_only=True,
-    )
+    # password = serializers.CharField(
+    #     # style={
+    #     #     'input_type': 'password'
+    #     # },
+    #     write_only=True,
+    # )
     print('Работает криэйт серилизатор')
 
     class Meta(UserCreateSerializer.Meta):
-        fields = ('email', 'username',
+        fields = ('email', 'id', 'username',
                   'first_name', 'last_name', 'password')
+       
+    def validate_username(self, value):
+        '''Проверяем, что username не
+        содержит недопустимые символы.
+        '''
+
+        if not re.match(r'^[\w.@+-]+$', value):
+            raise ValidationError(
+                'Username содержит недопустимые символы'
+            )
+        return value
 
 
 class SetPasswordSerializer(serializers.Serializer):
@@ -246,8 +236,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 class FavoritesListSerializer(serializers.Serializer): 
     '''Серилизатор для добавления рецепта в избранное.''' 
 
-    id = serializers.IntegerField()
-
     def create(self, validated_data):
         recipe = get_object_or_404(Recipe, pk=validated_data['id'])
         try:
@@ -281,8 +269,6 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 class SubscribeSerializer(serializers.Serializer):
     '''Добавление и удаление подписок пользователя.'''
 
-    id = serializers.IntegerField()
-
     def create(self, validated_data):
         user = self.context['request'].user
         author = get_object_or_404(User, pk=validated_data['id'])
@@ -299,14 +285,9 @@ class SubscribeSerializer(serializers.Serializer):
 class ShoppingCartSerializer(serializers.Serializer):
     '''Добавление и удаление рецептов из корзины покупок.'''
 
-    id = serializers.IntegerField()
-
     def create(self, validated_data):
         recipe = get_object_or_404(Recipe, pk=validated_data['id'])
-        #try:
         ShoppingList.objects.create(user=self.context['request'].user, recipe=recipe)
-        # except IntegrityError:
-        #     raise serializers.ValidationError('Этот рецепт уже есть в избранном')
         serializer = ShortRecipeSerializer(recipe)
         return serializer.data
     
