@@ -9,4 +9,4 @@ class CreateListRetrieveViewSet(
 ):
     '''Миксин для создания и получения объектов.'''
 
-    pass 
+    pass

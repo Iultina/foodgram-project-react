@@ -48,8 +48,8 @@ class Tag(models.Model):
         unique=True,
         blank=False,
         validators=[
-        validate_slug
-    ],
+            validate_slug
+        ],
     )
 
     class Meta:
@@ -84,8 +84,7 @@ class Recipe(models.Model):
     image = models.ImageField(
         'Изображение',
         upload_to='recipes/',
-        blank=True,
-        null=True,
+        blank=False,
         help_text='Прикрепите изображение',
     )
     ingredients = models.ManyToManyField(
@@ -106,11 +105,11 @@ class Recipe(models.Model):
         'Время приготовления',
         blank=False,
         validators=[
-        MinValueValidator(
-            1,
-            'Время приготовления должно быть больше 1'
-        )
-    ],
+            MinValueValidator(
+                1,
+                'Время приготовления должно быть больше 1'
+            )
+        ],
         help_text='Время приготовления в минутах',
     )
     pub_date = models.DateTimeField(
@@ -132,13 +131,13 @@ class RecipeIngredient(models.Model):
 
     recipe = models.ForeignKey(
         Recipe,
-        on_delete = models.CASCADE,
+        on_delete=models.CASCADE,
         related_name='recipe_ingredients',
         verbose_name='Рецепт',
     )
     ingredient = models.ForeignKey(
         Ingredient,
-        on_delete = models.CASCADE,
+        on_delete=models.CASCADE,
         related_name='ingredient_recipes',
         verbose_name='Ингредиент',
     )

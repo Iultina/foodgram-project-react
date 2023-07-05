@@ -1,5 +1,4 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import F, Q
 
@@ -64,4 +63,3 @@ class Follow(models.Model):
                 ~Q(user=F('author'))
             ), name='can_not_follow_himself')
         ]
-

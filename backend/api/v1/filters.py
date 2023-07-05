@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django_filters import rest_framework as filters
-
 from recipes.models import Recipe
 
 User = get_user_model()
@@ -8,7 +7,7 @@ User = get_user_model()
 
 class RecipeFilter(filters.FilterSet):
     '''Фильтрация по избранному, автору, списку покупок и тегам.'''
-    
+
     author = filters.ModelChoiceFilter(
         field_name='author',
         label='Автор',
