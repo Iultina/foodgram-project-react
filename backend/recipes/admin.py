@@ -19,12 +19,6 @@ class RecipeAdmin(admin.ModelAdmin):
     def favorites_count(self, obj):
         return obj.favorites.count()
 
-    def favorites_count(self, obj):
-        return obj.favorites.count()
-    favorites_count.short_description = (
-        'Количество подписанных пользователей на рецепт'
-    )
-
 
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('name',)

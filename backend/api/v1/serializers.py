@@ -57,16 +57,6 @@ class SetPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True, write_only=True)
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
-    '''Сериализатор для получения списка подписок пользователя.'''
-
-    author = UserReadSerializer(read_only=True)
-
-    class Meta:
-        model = Follow
-        fields = ('author',)
-
-
 class IngredientSerializer(serializers.ModelSerializer):
     '''Серилизатор для работы с ингридиентами.'''
 
