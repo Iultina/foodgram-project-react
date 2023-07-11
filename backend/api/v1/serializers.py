@@ -226,23 +226,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
 
 class FavoritesListSerializer(serializers.Serializer):
-    """Серилизатор для добавления рецепта в избранное."""
-
-    def create(self, validated_data):
-        recipe = get_object_or_404(Recipe, pk=validated_data['id'])
-        try:
-            FavoritesList.objects.create(
-                user=self.context['request'].user, recipe=recipe
-            )
-        except IntegrityError:
-            raise serializers.ValidationError(
-                'Этот рецепт уже есть в избранном'
-            )
-        serializer = ShortRecipeSerializer(recipe)
-        return serializer.data
-
-
-class FavoritesListSerializer(serializers.Serializer):
     """
     Сериализатор для добавления рецепта в избранное.
     """
