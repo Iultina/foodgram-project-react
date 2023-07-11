@@ -61,7 +61,7 @@ class Tag(models.Model):
 
 
 class Recipe(models.Model):
-    '''Модель рецептов.'''
+    """Модель рецептов."""
 
     author = models.ForeignKey(
         User,
@@ -127,7 +127,7 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
-    '''Модель для добавления ингредиентов в рецепте.'''
+    """Модель для добавления ингредиентов в рецепте."""
 
     recipe = models.ForeignKey(
         Recipe,
@@ -152,7 +152,7 @@ class RecipeIngredient(models.Model):
 
 
 class FavoritesList(models.Model):
-    '''Модель подписок.'''
+    """Модель подписок."""
 
     user = models.ForeignKey(
         User,
@@ -183,7 +183,7 @@ class FavoritesList(models.Model):
 
 
 class ShoppingList(models.Model):
-    '''Модель для добавления рецептов в корзину.'''
+    """Модель для добавления рецептов в корзину."""
 
     user = models.ForeignKey(
         User,

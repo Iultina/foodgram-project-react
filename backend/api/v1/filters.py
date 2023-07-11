@@ -1,12 +1,13 @@
 from django.contrib.auth import get_user_model
 from django_filters import rest_framework as filters
-from recipes.models import Recipe
+
+from recipes.models import Ingredient, Recipe
 
 User = get_user_model()
 
 
 class RecipeFilter(filters.FilterSet):
-    '''Фильтрация по избранному, автору, списку покупок и тегам.'''
+    """Фильтрация по избранному, автору, списку покупок и тегам."""
 
     author = filters.ModelChoiceFilter(
         field_name='author',
@@ -48,3 +49,16 @@ class RecipeFilter(filters.FilterSet):
             return Recipe.objects.filter(
                 shopping_list__user=self.request.user
             )
+
+
+class IngredientFilter(filters.FilterSet):
+    """Фильтрация ингредиентов по названию."""
+
+    name = filters.CharFilter(
+        field_name='name',
+        lookup_expr='istartswith',
+    )
+
+    class Meta:
+        model = Ingredient
+        fields = ('name',)

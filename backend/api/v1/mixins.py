@@ -7,6 +7,6 @@ class CreateListRetrieveViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet
 ):
-    '''Миксин для создания и получения объектов.'''
+    """Миксин для создания и получения объектов."""
 
     pass
