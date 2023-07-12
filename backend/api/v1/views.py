@@ -10,16 +10,16 @@ from rest_framework.response import Response
 
 from recipes.models import FavoritesList, Ingredient, Recipe, ShoppingList, Tag
 from users.models import Follow
-
 from .filters import IngredientFilter, RecipeFilter
 from .mixins import CreateListRetrieveViewSet
+from .paginators import CustomPagination
 from .serializers import (FavoritesListSerializer, IngredientSerializer,
                           RecipeCreateSerializer, RecipeGetSerializer,
                           SetPasswordSerializer, ShoppingCartSerializer,
                           SubscribeSerializer, SubscriptionSerializer,
                           TagSerializer, UserCreateSerializer,
                           UserReadSerializer)
-from .utils import CustomPagination, create_shopping_list_report
+from .utils import create_shopping_list_report
 
 User = get_user_model()
 
@@ -110,7 +110,11 @@ class UserViewSet(CreateListRetrieveViewSet):
             )
             serializer.is_valid(raise_exception=True)
             response_data = serializer.save(id=pk)
-            return Response(response_data)
+            return Response(
+                {'message': 'Подписка успешно создана',
+                 'data': response_data},
+                status=status.HTTP_201_CREATED
+            )
         elif request.method == 'DELETE':
             subscription = get_object_or_404(
                 Follow, user=self.request.user,
@@ -200,7 +204,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return self.remove_recipe_from_cart(request, pk)
 
     def add_recipe_to_cart(self, request, pk):
-        serializer = self.get_serializerserializer = self.get_serializer(
+        serializer = self.get_serializer(
             data=request.data,
             context={'request': request, 'recipe_id': pk}
         )
@@ -215,7 +219,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def remove_recipe_from_cart(self, request, pk):
         get_object_or_404(
             ShoppingList,
-            ser=self.request.user,
+            user=self.request.user,
             recipe=get_object_or_404(Recipe, pk=pk)
         ).delete()
         return Response(

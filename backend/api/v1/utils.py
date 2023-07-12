@@ -1,13 +1,6 @@
 from django.db.models import Sum
-from rest_framework.pagination import PageNumberPagination
 
-from recipes.models import (Ingredient, RecipeIngredient)
-
-PAGE_NUMBERS = 6
-
-
-class CustomPagination(PageNumberPagination):
-    page_size = PAGE_NUMBERS
+from recipes.models import Ingredient, RecipeIngredient
 
 
 def create_shopping_list_report(shopping_cart):

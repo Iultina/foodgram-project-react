@@ -61,7 +61,7 @@ class IngredientSerializer(serializers.ModelSerializer):
     """Серилизатор для работы с ингридиентами."""
 
     class Meta:
-        model = Ingredient()
+        model = Ingredient
         fields = ('id', 'name', 'measurement_unit')
 
 
@@ -69,7 +69,7 @@ class TagSerializer(serializers.ModelSerializer):
     """Серилизатор для работы с тэгами."""
 
     class Meta:
-        model = Tag()
+        model = Tag
         fields = ('id', 'name', 'color', 'slug')
 
 
@@ -191,14 +191,15 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return value
 
     def add_ingredients(self, recipe, ingredients_data):
+        ingredients = []
         for ingredient_data in ingredients_data:
-            print('add_ingredients')
-            print(ingredient_data)
             ingredient_id = ingredient_data.pop('id')
             ingredient = Ingredient.objects.get(id=ingredient_id)
-            RecipeIngredient.objects.update_or_create(
+            recipe_ingredient = RecipeIngredient(
                 recipe=recipe, ingredient=ingredient, **ingredient_data
             )
+            ingredients.append(recipe_ingredient)
+        RecipeIngredient.objects.bulk_create(ingredients)
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
@@ -206,18 +207,11 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         recipe = Recipe.objects.create(**validated_data)
         self.add_ingredients(recipe, ingredients_data)
         recipe.tags.set(tags_data)
-        print('Тут смотрим ингредиенты в рецепте create')
-        print(recipe.ingredients)
         return recipe
 
     def update(self, recipe, validated_data):
         ingredients = validated_data.pop('ingredients', [])
-        print(validated_data)
-        print(ingredients)
         tags = validated_data.pop('tags')
-        if not ingredients:
-            recipe.tags.set(tags)
-            return super().update(recipe, validated_data)
         RecipeIngredient.objects.filter(recipe=recipe).delete()
         self.add_ingredients(recipe, ingredients)
         recipe.tags.set(tags)
@@ -251,7 +245,10 @@ class FavoritesListSerializer(serializers.Serializer):
 class SubscriptionSerializer(serializers.ModelSerializer):
     """Просмотр списка подписок пользователя."""
 
-    recipes_count = serializers.SerializerMethodField(read_only=True)
+    recipes_count = serializers.IntegerField(
+        source='recipes.count',
+        read_only=True
+    )
     is_subscribed = serializers.SerializerMethodField(read_only=True)
     recipes = ShortRecipeSerializer(many=True, read_only=True)
 
@@ -259,9 +256,6 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'id', 'username', 'first_name',
                   'last_name', 'is_subscribed', 'recipes', 'recipes_count')
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
@@ -275,10 +269,8 @@ class SubscribeSerializer(serializers.Serializer):
     """Добавление и удаление подписок пользователя."""
 
     def validate(self, data):
-        user = self.context['request'].user
-        print(self.context['id'])
+        user = self.context.get('request').user
         author = get_object_or_404(User, pk=self.context['id'])
-        print(author)
         if user == author:
             raise serializers.ValidationError(
                 'Вы не можете подписаться на себя'
@@ -290,10 +282,12 @@ class SubscribeSerializer(serializers.Serializer):
         return data
 
     def create(self, validated_data):
-        user = self.context['request'].user
+        user = self.context.get('request').user
         author = get_object_or_404(User, pk=validated_data['id'])
         Follow.objects.create(user=user, author=author)
-        serializer = SubscriptionSerializer(author)
+        serializer = SubscriptionSerializer(
+            author, context={'request': self.context.get('request')}
+        )
         return serializer.data
 
 

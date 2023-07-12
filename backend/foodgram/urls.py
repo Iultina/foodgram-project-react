@@ -8,11 +8,11 @@ from rest_framework import permissions
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Foodgram API",
+        title='Foodgram API',
         default_version='v1',
-        description="Документация для проекта Foodgram",
-        contact=openapi.Contact(email="admin@foodgram.ru"),
-        license=openapi.License(name="BSD License"),
+        description='Документация для проекта Foodgram',
+        contact=openapi.Contact(email='admin@foodgram.ru'),
+        license=openapi.License(name='BSD License'),
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
