@@ -11,7 +11,10 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = bool(os.getenv('DEBUG'))
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1, localhost').split(', ')
+#ALLOWED_HOSTS = ['iultina-kittygram.sytes.net, 158.160.5.140, 127.0.0.1, localhost']
+ALLOWED_HOSTS=['*',]
+
+print(ALLOWED_HOSTS)
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -69,7 +72,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
-if os.getenv('USE_SQLITE', True):
+
+if DEBUG:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -83,7 +87,7 @@ else:
             'NAME': os.getenv('POSTGRES_DB', 'django'),
             'USER': os.getenv('POSTGRES_USER', 'django'),
             'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-            'HOST': os.getenv('DB_HOST', ''),
+            'HOST': os.getenv('DB_HOST', 'db'),
             'PORT': os.getenv('DB_PORT', 5432)
         }
     }
@@ -134,6 +138,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
+
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 6,
 
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend'

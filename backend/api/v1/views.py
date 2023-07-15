@@ -12,7 +12,7 @@ from recipes.models import FavoritesList, Ingredient, Recipe, ShoppingList, Tag
 from users.models import Follow
 from .filters import IngredientFilter, RecipeFilter
 from .mixins import CreateListRetrieveViewSet
-from .paginators import CustomPagination
+from .paginators import LimitPageNumberPaginator
 from .serializers import (FavoritesListSerializer, IngredientSerializer,
                           RecipeCreateSerializer, RecipeGetSerializer,
                           SetPasswordSerializer, ShoppingCartSerializer,
@@ -30,7 +30,6 @@ class UserViewSet(CreateListRetrieveViewSet):
     search_fields = ('username',)
     filterset_fields = ('username',)
     permission_classes = (AllowAny,)
-    pagination_class = CustomPagination
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -80,7 +79,7 @@ class UserViewSet(CreateListRetrieveViewSet):
         detail=False,
         serializer_class=SubscriptionSerializer,
         permission_classes=(IsAuthenticated,),
-        pagination_class=CustomPagination,
+        pagination_class = LimitPageNumberPaginator
     )
     def subscriptions(self, request):
         """Просмотр подписок пользователя."""
@@ -140,7 +139,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     ]
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
-    pagination_class = CustomPagination
+    pagination_class = LimitPageNumberPaginator
 
     def get_serializer_class(self):
         """Определение серилизатора."""
@@ -252,6 +251,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (AllowAny,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
+    pagination_class = None
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -260,3 +260,4 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (AllowAny,)
+    pagination_class = None
