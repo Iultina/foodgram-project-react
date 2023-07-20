@@ -10,6 +10,7 @@ from rest_framework.response import Response
 
 from recipes.models import FavoritesList, Ingredient, Recipe, ShoppingList, Tag
 from users.models import Follow
+
 from .filters import IngredientFilter, RecipeFilter
 from .mixins import CreateListRetrieveViewSet
 from .paginators import LimitPageNumberPaginator
@@ -79,7 +80,7 @@ class UserViewSet(CreateListRetrieveViewSet):
         detail=False,
         serializer_class=SubscriptionSerializer,
         permission_classes=(IsAuthenticated,),
-        pagination_class = LimitPageNumberPaginator
+        pagination_class=LimitPageNumberPaginator
     )
     def subscriptions(self, request):
         """Просмотр подписок пользователя."""

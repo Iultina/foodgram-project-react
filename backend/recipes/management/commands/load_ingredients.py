@@ -12,6 +12,9 @@ class Command(BaseCommand):
     python manage.py load_ingredients локально
     или
     sudo docker-compose exec backend python manage.py load_ingredients
+    или
+    sudo docker compose -f docker-compose.production.yml
+    exec backend python manage.py load_ingredients
     на удаленном сервере.
     Создает записи в модели Ingredients из списка.
     """

@@ -136,6 +136,4 @@ media/
 
 # Others
 node_modules
-data/
-frontend/
-infra/
+infra

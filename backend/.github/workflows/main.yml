@@ -139,7 +139,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         source: "docker-compose.production.yml"
-        target: "kittygram"
+        target: "foodgram"
     - name: Executing remote ssh commands to deploy
       uses: appleboy/ssh-action@master
       with:
@@ -150,7 +150,7 @@ jobs:
         script: |
           # Удаляет неиспользуемые контейнеры, изображения и сети
           sudo docker system prune -a --force
-          cd kittygram
+          cd foodgram
           # Останавливает все контейнеры в docker compose
           sudo docker compose -f docker-compose.production.yml down
           # Выполняет pull образов DockerHub

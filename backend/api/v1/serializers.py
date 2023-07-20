@@ -1,6 +1,7 @@
 import re
 
 from django.core.exceptions import ValidationError
+from django.db.models import F
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_base64.fields import Base64ImageField
@@ -9,7 +10,6 @@ from rest_framework import serializers
 from recipes.models import (FavoritesList, Ingredient, Recipe,
                             RecipeIngredient, ShoppingList, Tag)
 from users.models import Follow, User
-from django.db.models import F
 
 
 class UserReadSerializer(UserSerializer):
@@ -102,7 +102,6 @@ class RecipeIngredientGetSerializer(serializers.ModelSerializer):
         model = RecipeIngredient
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
-
     def validate_amount(self, value):
         """Проверяем, что количество ингредиента больше 0."""
 
@@ -176,6 +175,15 @@ class AddIngredientRecipeSerializer(serializers.ModelSerializer):
         model = RecipeIngredient
         fields = ('id', 'amount')
 
+    def validate_amount(self, value):
+        """Проверяем, что количество ингредиента больше 0."""
+
+        if value <= 0:
+            raise ValidationError(
+                'Количество ингредиента должно быть больше 0'
+            )
+        return value
+
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     """Создание и обновление рецептов."""
@@ -204,14 +212,16 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 'Время приготовления должно быть больше 0'
             )
         return value
-    
+
     def add_ingredients(self, recipe, ingredients_data):
         ingredients = []
         for ingredient_data in ingredients_data:
-            print(ingredient_data)
             ingredient_id = ingredient_data['ingredient']['id']
             amount = ingredient_data['amount']
             ingredient = Ingredient.objects.get(id=ingredient_id)
+            if RecipeIngredient.objects.filter(
+                    recipe=recipe, ingredient=ingredient_id).exists():
+                amount += F('amount')
             recipe_ingredient = RecipeIngredient(
                 recipe=recipe, ingredient=ingredient, amount=amount
             )
@@ -220,7 +230,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
-        tags= validated_data.pop('tags')
+        tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
         self.add_ingredients(recipe, ingredients_data)
         recipe.tags.set(tags)
@@ -228,8 +238,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('ingredients', [])
-        print('Метод апдэйт, ингредиенты')
-        print(ingredients)
         tags = validated_data.pop('tags')
         RecipeIngredient.objects.filter(recipe=instance).delete()
         self.add_ingredients(instance, ingredients)
@@ -292,7 +300,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             recipes = obj.recipes.all()
         context = {'request': request}
         return ShortRecipeSerializer(recipes, many=True,
-                                      context=context).data
+                                     context=context).data
+
 
 class SubscribeSerializer(serializers.Serializer):
     """Добавление и удаление подписок пользователя."""
