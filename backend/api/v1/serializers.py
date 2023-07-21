@@ -184,6 +184,22 @@ class AddIngredientRecipeSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def validate(self, attrs):
+        """
+        Проверяем, что ингредиент не добавлен уже в рецепт.
+        """
+
+        request = self.context.get('request')
+        recipe_id = request.GET.get('recipe')
+        ingredient_id = attrs['ingredient']['id']
+        existing_ingredients = RecipeIngredient.objects.filter(
+            recipe_id=recipe_id,
+            ingredient_id=ingredient_id
+        )
+        if existing_ingredients.exists():
+            raise ValidationError('Ингредиент уже добавлен в рецепт')
+        return attrs
+
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     """Создание и обновление рецептов."""
