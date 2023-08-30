@@ -154,9 +154,6 @@ sudo docker compose -f docker-compose.production.yml exec backend python manage.
 ```bash
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py createsuperuser
 ```
-В данном проекте можно воспользоваться уже созданным суперюзером:
-Email: '''admin@foodgram.ru'''
-Пароль: '''1111'''
 
 Собрать статику:
 ```bash
@@ -197,6 +194,6 @@ API фреймворк: Django REST (контейнер backend)
 ---
 ## 7. Об авторе <a id=7></a>
 
-Кириленко Тина 
-Python-разработчик (Backend)
-E-mail: tina@yandex.ru
+Tina Kirilenko 📧 Telegram: @Mi_2018
+
+🔗 LinkedIn: linkedin.com/in/iultina
