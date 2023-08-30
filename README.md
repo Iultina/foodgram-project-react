@@ -196,4 +196,4 @@ API фреймворк: Django REST (контейнер backend)
 
 Tina Kirilenko 📧 Telegram: @Mi_2018
 
-🔗 LinkedIn: linkedin.com/in/iultina <a id=7></a>
+🔗 LinkedIn: linkedin.com/in/iultina
